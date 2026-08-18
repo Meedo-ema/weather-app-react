@@ -1,6 +1,8 @@
 import './App.css'
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 
+//React
+import { useEffect, useState } from 'react';
 // Material UI
 import Container from '@mui/material/Container';
 import Card from '@mui/material/Card';
@@ -13,6 +15,9 @@ import rtlPlugin from '@mui/stylis-plugin-rtl';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import Box from '@mui/material/Box';
+
+//External
+import axios from 'axios';
 
 const theme = createTheme({
   typography: {
@@ -27,8 +32,32 @@ const rtlCache = createCache({
   stylisPlugins: [prefixer, rtlPlugin],
 });
 
+let cancelAxios = null;
 
 function App() {
+  const [temp, setTemp] = useState(null)
+  useEffect(() => {
+    axios
+      .get("http://api.weatherapi.com/v1/current.json?key=e18a11e0497942c9999220334261608&q=Egypt&aqi=yes",
+        {
+          cancelToken: new axios.CancelToken((c) => {
+            cancelAxios = c
+          })
+        },
+      )
+      .then((response) => {
+        const responseTemp = response.data.current.temp_c
+        setTemp(responseTemp)
+
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+
+    return () => {
+      cancelAxios()
+    }
+  }, [])
 
   return (
     <>
@@ -73,7 +102,7 @@ function App() {
               }}>
                 {/* city and date */}
                 <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
-                  <Typography sx={{ fontWeight: '500', lineHeight: 1 }} variant="h2" gutterBottom>
+                  <Typography sx={{ color: '#ffffff', fontWeight: '500', lineHeight: 1 }} variant="h2" gutterBottom>
                     القاهره
                   </Typography>
 
@@ -93,8 +122,8 @@ function App() {
                   <Box>
                     {/* temp and pic */}
                     <Box>
-                      <Typography variant="h1" sx={{ lineHeight: 1, margin: 0 }}>
-                        35
+                      <Typography variant="h2" sx={{ color: '#ffffff', lineHeight: 1, margin: 0 }}>
+                        {temp}
                       </Typography>
                       {/* TODO: weather pic from API */}
                     </Box>
