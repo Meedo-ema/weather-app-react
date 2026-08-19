@@ -19,6 +19,7 @@ import Box from '@mui/material/Box';
 //External
 import axios from 'axios';
 
+
 const theme = createTheme({
   typography: {
     fontFamily: 'IBM',
@@ -35,10 +36,18 @@ const rtlCache = createCache({
 let cancelAxios = null;
 
 function App() {
-  const [temp, setTemp] = useState(null)
+
+  const [date, setDate] = useState("")
+  const [temp, setTemp] = useState({
+    number: null,
+    description: "",
+    min: null,
+    max: null,
+    icon: null
+  })
   useEffect(() => {
     axios
-      .get("http://api.weatherapi.com/v1/current.json?key=e18a11e0497942c9999220334261608&q=Egypt&aqi=yes",
+      .get("http://api.weatherapi.com/v1/forecast.json?key=e18a11e0497942c9999220334261608&q=Egypt&days=1&aqi=yes&alerts=no",
         {
           cancelToken: new axios.CancelToken((c) => {
             cancelAxios = c
@@ -47,7 +56,25 @@ function App() {
       )
       .then((response) => {
         const responseTemp = response.data.current.temp_c
-        setTemp(responseTemp)
+        const description = response.data.current.condition.text
+        const min = response.data.forecast.forecastday[0].day.mintemp_c
+        const max = response.data.forecast.forecastday[0].day.maxtemp_c
+        const icon = response.data.current.condition.icon
+
+        setTemp({
+          number: responseTemp,
+          description: description,
+          min: min,
+          max: max,
+          icon: icon
+        })
+        setDate(
+          new Intl.DateTimeFormat('ar-EG', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+          }).format(new Date(response.data.location.localtime))
+        );
 
       })
       .catch((error) => {
@@ -107,7 +134,7 @@ function App() {
                   </Typography>
 
                   <Typography sx={{ color: '#ffffff', lineHeight: 1 }} variant="h5" gutterBottom>
-                    مايو ١٥ ٢٠٢٥
+                    {date}
                   </Typography>
                 </Box>
                 <Divider sx={{
@@ -121,17 +148,18 @@ function App() {
                   {/* Right part */}
                   <Box>
                     {/* temp and pic */}
-                    <Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                       <Typography variant="h2" sx={{ color: '#ffffff', lineHeight: 1, margin: 0 }}>
-                        {temp}
+                        {temp.number}
                       </Typography>
                       {/* TODO: weather pic from API */}
+                      <img src={`https:${temp.icon}`} />
                     </Box>
                     {/* temp and pic */}
                     {/* description */}
                     <Box>
                       <Typography sx={{ color: '#ffffff', margin: 0 }} variant="h6">
-                        partly cloudy
+                        {temp.description}
                       </Typography>
                     </Box>
                     {/* description */}
@@ -143,13 +171,13 @@ function App() {
                       gap: 1,
                     }} >
                       <Typography sx={{ color: '#ffffff' }} variant="h6" gutterBottom>
-                        الصغري: ٣٥
+                        الصغري: {temp.min}
                       </Typography>
                       <Typography sx={{ marginRight: '5px', marginLeft: '5px', color: '#ffffff' }} variant="h6" gutterBottom>
                         |
                       </Typography>
                       <Typography sx={{ color: '#ffffff' }} variant="h6" gutterBottom>
-                        العظمي: ٤٥
+                        العظمي: {temp.max}
                       </Typography>
                     </Box>
                     {/* min & max */}
