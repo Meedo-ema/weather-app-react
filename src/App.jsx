@@ -18,7 +18,7 @@ import Box from '@mui/material/Box';
 
 //External
 import axios from 'axios';
-
+import { useTranslation } from 'react-i18next';
 
 const theme = createTheme({
   typography: {
@@ -36,7 +36,7 @@ const rtlCache = createCache({
 let cancelAxios = null;
 
 function App() {
-
+  const { t, i18n } = useTranslation();
   const [date, setDate] = useState("")
   const [temp, setTemp] = useState({
     number: null,
@@ -45,6 +45,11 @@ function App() {
     max: null,
     icon: null
   })
+
+  useEffect(() => {
+    i18n.changeLanguage('ar');
+  }, [])
+
   useEffect(() => {
     axios
       .get("http://api.weatherapi.com/v1/forecast.json?key=e18a11e0497942c9999220334261608&q=Egypt&days=1&aqi=yes&alerts=no",
@@ -130,7 +135,7 @@ function App() {
                 {/* city and date */}
                 <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
                   <Typography sx={{ color: '#ffffff', fontWeight: '500', lineHeight: 1 }} variant="h2" gutterBottom>
-                    القاهره
+                    {t("hello")}
                   </Typography>
 
                   <Typography sx={{ color: '#ffffff', lineHeight: 1 }} variant="h5" gutterBottom>
