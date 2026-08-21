@@ -1,0 +1,13 @@
+{
+  "weather": {
+    "1000": "Clear",
+    "1003": "Partly cloudy",
+    "1006": "Cloudy",
+    "1009": "Overcast",
+    "1030": "Mist",
+    "1063": "Patchy rain possible",
+    "1183": "Light rain",
+    "1189": "Moderate rain",
+    "1195": "Heavy rain"
+  }
+}

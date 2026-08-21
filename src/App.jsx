@@ -20,35 +20,69 @@ import Box from '@mui/material/Box';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 
-const theme = createTheme({
-  typography: {
-    fontFamily: 'IBM',
-  },
-  direction: 'rtl',
-})
 
 // Create rtl cache
 const rtlCache = createCache({
   key: 'muirtl',
   stylisPlugins: [prefixer, rtlPlugin],
 });
+// Create ltr cache
+const ltrCache = createCache({
+  key: 'muiltr',
+  stylisPlugins: [prefixer],
+});
 
 let cancelAxios = null;
 
+
+
+
+
 function App() {
   const { t, i18n } = useTranslation();
-  const [date, setDate] = useState("")
+  const direction = i18n.language === 'ar' ? 'rtl' : 'ltr';
+  const theme = createTheme({
+    typography: {
+      fontFamily: 'IBM',
+    },
+    direction,
+  });
+
+  const [date, setDate] = useState(null)
   const [temp, setTemp] = useState({
     number: null,
-    description: "",
+    conditionCode: null,
     min: null,
     max: null,
     icon: null
   })
 
+  // ---- Handelers ---//
+  function handleLanguageClick() {
+    // if (locale === 'ar') {
+    //   setLocale('en')
+    //   i18n.changeLanguage('en');
+    // } else {
+    //   setLocale('ar')
+    //   i18n.changeLanguage('ar')
+    // }
+    const newLanguage = i18n.language === 'ar' ? 'en' : 'ar';
+
+    i18n.changeLanguage(newLanguage);
+  }
+
+  // translate Numbers
+  const formatNumber = (number) => {
+    return new Intl.NumberFormat(
+      i18n.language === 'ar' ? 'ar-EG' : 'en-US'
+    ).format(number);
+  };
+  // translate Numbers
+
   useEffect(() => {
-    i18n.changeLanguage('ar');
-  }, [])
+    document.documentElement.dir = direction;
+    document.documentElement.lang = i18n.language;
+  }, [direction, i18n.language]);
 
   useEffect(() => {
     axios
@@ -61,25 +95,19 @@ function App() {
       )
       .then((response) => {
         const responseTemp = response.data.current.temp_c
-        const description = response.data.current.condition.text
+        const conditionCode = response.data.current.condition.code
         const min = response.data.forecast.forecastday[0].day.mintemp_c
         const max = response.data.forecast.forecastday[0].day.maxtemp_c
         const icon = response.data.current.condition.icon
 
         setTemp({
           number: responseTemp,
-          description: description,
+          conditionCode: conditionCode,
           min: min,
           max: max,
           icon: icon
         })
-        setDate(
-          new Intl.DateTimeFormat('ar-EG', {
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric',
-          }).format(new Date(response.data.location.localtime))
-        );
+        setDate(response.data.location.localtime);
 
       })
       .catch((error) => {
@@ -91,9 +119,10 @@ function App() {
     }
   }, [])
 
+
   return (
     <>
-      <CacheProvider value={rtlCache}>
+      <CacheProvider value={direction === 'rtl' ? rtlCache : ltrCache}>
         <ThemeProvider theme={theme}>
           <Container
             maxWidth="md"
@@ -123,7 +152,7 @@ function App() {
                   md: '700px',
                 },
                 borderRadius: 4,
-                background: '#1976D2',
+                background: '#304ffe',
                 boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
                 overflow: 'hidden',
                 px: {
@@ -135,11 +164,20 @@ function App() {
                 {/* city and date */}
                 <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
                   <Typography sx={{ color: '#ffffff', fontWeight: '500', lineHeight: 1 }} variant="h2" gutterBottom>
-                    {t("hello")}
+                    {t("Cairo")}
                   </Typography>
 
                   <Typography sx={{ color: '#ffffff', lineHeight: 1 }} variant="h5" gutterBottom>
-                    {date}
+                    {date &&
+                      new Intl.DateTimeFormat(
+                        i18n.language === 'ar' ? 'ar-EG' : 'en-US',
+                        {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                        }
+                      ).format(new Date(date))
+                    }
                   </Typography>
                 </Box>
                 <Divider sx={{
@@ -155,16 +193,16 @@ function App() {
                     {/* temp and pic */}
                     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                       <Typography variant="h2" sx={{ color: '#ffffff', lineHeight: 1, margin: 0 }}>
-                        {temp.number}
+                        {formatNumber(temp.number)}
                       </Typography>
                       {/* TODO: weather pic from API */}
                       <img src={`https:${temp.icon}`} />
                     </Box>
                     {/* temp and pic */}
                     {/* description */}
-                    <Box>
+                    <Box sx={{ mt: 2, mb: 2 }}>
                       <Typography sx={{ color: '#ffffff', margin: 0 }} variant="h6">
-                        {temp.description}
+                        {t(`weather.${temp.conditionCode}`)}
                       </Typography>
                     </Box>
                     {/* description */}
@@ -176,13 +214,13 @@ function App() {
                       gap: 1,
                     }} >
                       <Typography sx={{ color: '#ffffff' }} variant="h6" gutterBottom>
-                        الصغري: {temp.min}
+                        {t('max')}: {formatNumber(temp.max)}
                       </Typography>
                       <Typography sx={{ marginRight: '5px', marginLeft: '5px', color: '#ffffff' }} variant="h6" gutterBottom>
                         |
                       </Typography>
                       <Typography sx={{ color: '#ffffff' }} variant="h6" gutterBottom>
-                        العظمي: {temp.max}
+                        {t('min')}: {formatNumber(temp.min)}
                       </Typography>
                     </Box>
                     {/* min & max */}
@@ -212,7 +250,11 @@ function App() {
                   px: 1.5,
                   py: 0.75,
                   minWidth: '60px',
-                }} variant="text">EN</Button>
+                }} variant="text"
+                  onClick={handleLanguageClick}
+                >
+                  {i18n.language === 'ar' ? 'EN' : 'عربي'}
+                </Button>
               </Box>
               {/* Language Comvertor */}
             </Box>
